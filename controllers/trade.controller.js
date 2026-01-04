@@ -12,27 +12,23 @@ exports.buyStock = async (req, res) => {
     const userId = req.user.id;
     const { symbol, quantity } = req.body;
 
-    if (!symbol || !quantity || quantity <= 0) {
-      throw new Error('Invalid input');
-    }
-
-    // 1️⃣ Fetch live price
+    // 1️ Fetch live price
     const price = await getLivePrice(symbol);
     const totalCost = price * quantity;
 
-    // 2️⃣ Fetch user
+    // 2 Fetch user
     const user = await User.findById(userId).session(session);
     if (!user) throw new Error('User not found');
 
-    // 3️⃣ Check balance
+    // 3️ Check balance
     if (user.cashBalance < totalCost) {
       throw new Error('Insufficient balance');
     }
 
-    // 4️⃣ Fetch portfolio
+    // 4️ Fetch portfolio
     const portfolio = await Portfolio.findOne({ userId }).session(session);
 
-    // 5️⃣ Update holdings
+    // 5️ Update holdings
     const holding = portfolio.holdings.find(h => h.symbol === symbol);
 
     if (holding) {
@@ -48,10 +44,10 @@ exports.buyStock = async (req, res) => {
       });
     }
 
-    // 6️⃣ Deduct cash
+    // 6️ Deduct cash
     user.cashBalance -= totalCost;
 
-    // 7️⃣ Create trade (ledger entry)
+    // 7️ Create trade (ledger entry)
     await Trade.create(
       [{
         userId,
@@ -63,11 +59,11 @@ exports.buyStock = async (req, res) => {
       { session }
     );
 
-    // 8️⃣ Save updated documents
+    // 8️ Save updated documents
     await user.save({ session });
     await portfolio.save({ session });
 
-    // 9️⃣ Commit transaction
+    // 9️ Commit transaction
     await session.commitTransaction();
     session.endSession();
 
@@ -97,23 +93,19 @@ exports.sellStock = async (req, res) => {
     const userId = req.user.id;
     const { symbol, quantity } = req.body;
 
-    if (!symbol || !quantity || quantity <= 0) {
-      throw new Error('Invalid input');
-    }
-
-    // 1️⃣ Fetch live price
+    // 1️ Fetch live price
     const price = await getLivePrice(symbol);
     const totalProceeds = price * quantity;
 
-    // 2️⃣ Fetch user
+    // 2️ Fetch user
     const user = await User.findById(userId).session(session);
     if (!user) throw new Error('User not found');
 
-    // 3️⃣ Fetch portfolio
+    // 3️ Fetch portfolio
     const portfolio = await Portfolio.findOne({ userId }).session(session);
     if (!portfolio) throw new Error('Portfolio not found');
 
-    // 4️⃣ Find holding
+    // 4️ Find holding
     const holdingIndex = portfolio.holdings.findIndex(
       h => h.symbol === symbol
     );
@@ -124,22 +116,22 @@ exports.sellStock = async (req, res) => {
 
     const holding = portfolio.holdings[holdingIndex];
 
-    // 5️⃣ Validate quantity
+    // 5️ Validate quantity
     if (holding.quantity < quantity) {
       throw new Error('Insufficient stock quantity');
     }
 
-    // 6️⃣ Update holding
+    // 6️ Update holding
     holding.quantity -= quantity;
 
     if (holding.quantity === 0) {
       portfolio.holdings.splice(holdingIndex, 1);
     }
 
-    // 7️⃣ Credit cash
+    // 7️ Credit cash
     user.cashBalance += totalProceeds;
 
-    // 8️⃣ Create trade (ledger entry)
+    // 8️ Create trade (ledger entry)
     await Trade.create(
       [{
         userId,
@@ -151,11 +143,11 @@ exports.sellStock = async (req, res) => {
       { session }
     );
 
-    // 9️⃣ Save updates
+    // 9️ Save updates
     await user.save({ session });
     await portfolio.save({ session });
 
-    // 🔟 Commit transaction
+    // 10 Commit transaction
     await session.commitTransaction();
     session.endSession();
 
