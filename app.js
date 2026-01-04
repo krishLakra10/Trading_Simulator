@@ -1,8 +1,9 @@
 const express = require('express');
 const app = express();
+app.use(express.json());
 app.set('view engine' , 'ejs');
-// const path = require('path');
-// app.set('views', path.join(__dirname, 'views'));
+const path = require('path');
+app.set('views', path.join(__dirname, 'views'));
 
 
 //Mongoose Connection
@@ -33,7 +34,7 @@ app.use('/portfolio', portfolioRoutes);
 
 
 app.get('/' , (req , res) => {
-    res.render('home.ejs');;
+    res.render('home');
 });
 app.use((req ,res) => {
     console.log(`request recieved`)
