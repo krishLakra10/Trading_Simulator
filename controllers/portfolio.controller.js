@@ -17,7 +17,7 @@ exports.getPortfolio = async (req, res) => {
     for (const holding of portfolio.holdings) {
       const currentPrice = await getLivePrice(holding.symbol);
 
-      const investedValue = holding.avgPrice * holding.quantity;
+      const investedValue = holding.price * holding.quantity;
       const currentValue = currentPrice * holding.quantity;
       const pnl = currentValue - investedValue;
 
@@ -27,7 +27,7 @@ exports.getPortfolio = async (req, res) => {
       detailedHoldings.push({
         symbol: holding.symbol,
         quantity: holding.quantity,
-        avgPrice: holding.avgPrice,
+        price: holding.price,
         currentPrice,
         investedValue,
         currentValue,

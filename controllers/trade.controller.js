@@ -131,6 +131,9 @@ exports.sellStock = async (req, res) => {
     // 7️ Credit cash
     user.cashBalance += totalProceeds;
 
+    const realizedPnL = (price - holding.price) * quantity;
+    
+
     // 8️ Create trade (ledger entry)
     await Trade.create(
       [{
@@ -140,6 +143,7 @@ exports.sellStock = async (req, res) => {
         price,
         type: 'SELL'
       }],
+      realizedPnL ,
       { session }
     );
 
@@ -165,5 +169,21 @@ exports.sellStock = async (req, res) => {
     res.status(400).json({
       message: err.message || 'Sell operation failed'
     });
+  }
+};
+
+exports.getTradeHistory = async (req ,res) => {
+  try {
+    const userId = req.user.id;
+
+    const trades = (await Trade.find({userId})).sort({createdAt :-1});
+
+    res.json({
+      trades,
+      count : trades.length
+    });
+  }
+  catch(e){
+    res.status(500).json({message : e.message});
   }
 };

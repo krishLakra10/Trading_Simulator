@@ -5,6 +5,8 @@ const validate = require('../middleware/validate.middleware');
 const tradeController = require('../controllers/trade.controller');
 const {tradeSchema } = require('../Validators/trade.validation');
 
+router.get('/history', auth, tradeController.getTradeHistory);
+
 router.post('/buy', auth,validate(tradeSchema), tradeController.buyStock);
 
 router.post('/sell', auth,validate(tradeSchema), tradeController.sellStock);

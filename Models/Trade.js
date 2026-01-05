@@ -32,8 +32,13 @@ const tradeSchema = new mongoose.Schema(
       type: String,
       enum: ['BUY', 'SELL'],
       required: true
+    },
+     realizedPnl: {
+      type: Number,
+      default: 0
     }
   },
+   
   { timestamps: true }
 );
 
