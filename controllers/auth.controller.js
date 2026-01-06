@@ -2,14 +2,16 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../Models/User');
 const Portfolio = require('../Models/Portfolio');
+const appError = require('../utils/AppError');
+const catchAsync = require('../utils/catchAsync');
 
-exports.register = async (req, res) => {
-  try {
+exports.register = catchAsync(async (req, res,next) => {
+  
     const { name, email, password, pan } = req.body;
 
     const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(409).json({ message: 'User already exists' });
+    if (!existingUser) {
+      throw new appError('Email already in use',400);
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
@@ -27,24 +29,22 @@ exports.register = async (req, res) => {
     });
 
     res.status(201).json({ message: 'User registered successfully' });
-  } catch (err) {
-    res.status(500).json({ message: 'Registration failed' });
-  }
-};
+  
+});
 
 
-exports.login = async (req, res) => {
-  try {
+exports.login = catchAsync(async (req, res ,next) => {
+  
     const { email, password } = req.body;
 
     const user = await User.findOne({ email }).select('+passwordHash');
     if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      throw new appError('Invalid credentials',401);
     }
 
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      throw new appError('Invalid credentials',401);
     }
 
     const token = jwt.sign(
@@ -54,7 +54,5 @@ exports.login = async (req, res) => {
     );
 
     res.json({ token });
-  } catch (err) {
-    res.status(500).json({ message: 'Login failed' });
-  }
-};
+  
+});

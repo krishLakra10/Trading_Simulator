@@ -4,6 +4,7 @@ app.use(express.json());
 app.set('view engine' , 'ejs');
 const path = require('path');
 app.set('views', path.join(__dirname, 'views'));
+const errorHandler = require('./middlewares/error.middleware');
 
 
 //Mongoose Connection
@@ -36,6 +37,12 @@ app.use('/portfolio', portfolioRoutes);
 app.get('/' , (req , res) => {
     res.render('home');
 });
+
+app.all('*', (req, res, next) => {
+  next(new AppError(`Can't find ${req.originalUrl}`, 404));
+});
+app.use(errorHandler);
+
 app.use((req ,res) => {
     console.log(`request recieved`)
 })

@@ -3,12 +3,14 @@ const User = require('../Models/User');
 const Portfolio = require('../Models/Portfolio');
 const Trade = require('../Models/Trade');
 const { getLivePrice } = require('../services/marketData.service');
+const appError = require('../utils/AppError');
+const catchAsync = require('../utils/catchAsync');
 
-exports.buyStock = async (req, res) => {
+exports.buyStock = catchAsync(async (req, res , next) => {
   const session = await mongoose.startSession();
   session.startTransaction();
 
-  try {
+
     const userId = req.user.id;
     const { symbol, quantity } = req.body;
 
@@ -18,11 +20,11 @@ exports.buyStock = async (req, res) => {
 
     // 2 Fetch user
     const user = await User.findById(userId).session(session);
-    if (!user) throw new Error('User not found');
+    if (!user) throw new appError('User not found',404);
 
     // 3️ Check balance
     if (user.cashBalance < totalCost) {
-      throw new Error('Insufficient balance');
+      throw new appError('Insufficient balance',400);
     }
 
     // 4️ Fetch portfolio
@@ -74,22 +76,14 @@ exports.buyStock = async (req, res) => {
       price
     });
 
-  } catch (err) {
-    await session.abortTransaction();
-    session.endSession();
-
-    res.status(400).json({
-      message: err.message || 'Buy operation failed'
-    });
-  }
-};
+ 
+});
 
 
-exports.sellStock = async (req, res) => {
+exports.sellStock = catchAsync(async (req, res , next) => {
   const session = await mongoose.startSession();
   session.startTransaction();
 
-  try {
     const userId = req.user.id;
     const { symbol, quantity } = req.body;
 
@@ -99,11 +93,11 @@ exports.sellStock = async (req, res) => {
 
     // 2️ Fetch user
     const user = await User.findById(userId).session(session);
-    if (!user) throw new Error('User not found');
+    if (!user) throw new appError('User not found',404);
 
     // 3️ Fetch portfolio
     const portfolio = await Portfolio.findOne({ userId }).session(session);
-    if (!portfolio) throw new Error('Portfolio not found');
+    if (!portfolio) throw new appError('Portfolio not found',404);
 
     // 4️ Find holding
     const holdingIndex = portfolio.holdings.findIndex(
@@ -111,14 +105,14 @@ exports.sellStock = async (req, res) => {
     );
 
     if (holdingIndex === -1) {
-      throw new Error('Stock not owned');
+      throw new appError('Stock not owned',400);
     }
 
     const holding = portfolio.holdings[holdingIndex];
 
     // 5️ Validate quantity
     if (holding.quantity < quantity) {
-      throw new Error('Insufficient stock quantity');
+      throw new appError('Insufficient stock quantity',400);
     }
 
     // 6️ Update holding
@@ -162,18 +156,11 @@ exports.sellStock = async (req, res) => {
       price
     });
 
-  } catch (err) {
-    await session.abortTransaction();
-    session.endSession();
+  
+});
 
-    res.status(400).json({
-      message: err.message || 'Sell operation failed'
-    });
-  }
-};
-
-exports.getTradeHistory = async (req ,res) => {
-  try {
+exports.getTradeHistory = catchAsync(async (req ,res,next) => {
+  
     const userId = req.user.id;
 
     const trades = (await Trade.find({userId})).sort({createdAt :-1});
@@ -182,8 +169,5 @@ exports.getTradeHistory = async (req ,res) => {
       trades,
       count : trades.length
     });
-  }
-  catch(e){
-    res.status(500).json({message : e.message});
-  }
-};
+ 
+});
