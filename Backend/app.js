@@ -7,6 +7,11 @@ app.set('views', path.join(__dirname, 'views'));
 const errorHandler = require('./middlewares/error.middleware');
 
 
+//Enable CORS
+const cors = require('cors');
+app.use(cors());
+
+
 //Mongoose Connection
 const mongoose = require('mongoose');
 
